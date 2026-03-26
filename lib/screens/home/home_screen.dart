@@ -55,7 +55,7 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-// ─── Net Worth Card ──────────────────────────────────────────────────────────
+// ─── Net Worth Card (Hero gradient per design system) ────────────────────────
 class _NetWorthCard extends ConsumerWidget {
   final bool isDark;
   const _NetWorthCard({required this.isDark});
@@ -68,21 +68,14 @@ class _NetWorthCard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryLight,
-            AppColors.primaryLight.withValues(alpha: 0.8),
-            const Color(0xFF6366F1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
+        gradient: AppGradients.heroCard,
+        borderRadius: BorderRadius.circular(AppTheme.radiusXxl),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryLight.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: AppColors.primary.withValues(alpha: 0.15),
+            blurRadius: 32,
+            offset: const Offset(0, 12),
+            spreadRadius: -4,
           ),
         ],
       ),
@@ -96,7 +89,7 @@ class _NetWorthCard extends ConsumerWidget {
                     horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                 ),
                 child: const Text(
                   'Net Worth',
@@ -174,83 +167,87 @@ class _AiPacingWidget extends ConsumerWidget {
           statusIcon = Icons.trending_down_rounded;
         }
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(statusIcon, color: statusColor, size: 20),
+        return Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Theme.of(context).colorScheme.surfaceContainerLow
+                : AppColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+            boxShadow: AppShadows.card,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Weekly Pacing',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        Text(
-                          statusText,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Text(
-                      formatter.format(remaining),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: statusColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: percentage.clamp(0.0, 1.0),
-                    minHeight: 8,
-                    backgroundColor: statusColor.withValues(alpha: 0.1),
-                    valueColor: AlwaysStoppedAnimation(statusColor),
+                    child: Icon(statusIcon, color: statusColor, size: 20),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  '${(percentage * 100).toStringAsFixed(0)}% of weekly budget used',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark
-                        ? AppColors.onSurfaceVariantDark
-                        : AppColors.onSurfaceVariantLight,
+                  const SizedBox(width: AppSpacing.sm),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Weekly Pacing',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
+                  const Spacer(),
+                  Text(
+                    formatter.format(remaining),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: statusColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                child: LinearProgressIndicator(
+                  value: percentage.clamp(0.0, 1.0),
+                  minHeight: 8,
+                  backgroundColor: statusColor.withValues(alpha: 0.1),
+                  valueColor: AlwaysStoppedAnimation(statusColor),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                '${(percentage * 100).toStringAsFixed(0)}% of weekly budget used',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: isDark
+                      ? AppColors.onSurfaceVariantDark
+                      : AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         );
       },
-      loading: () => const Card(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.lg),
-          child: Center(child: CircularProgressIndicator()),
+      loading: () => Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppTheme.radiusXl),
         ),
+        child: const Center(child: CircularProgressIndicator()),
       ),
       error: (_, _) => const SizedBox.shrink(),
     );
@@ -269,12 +266,7 @@ class _QuickTemplatesRow extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Quick Add',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
+        Text('Quick Add', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: AppSpacing.sm),
         SizedBox(
           height: 80,
@@ -284,10 +276,8 @@ class _QuickTemplatesRow extends ConsumerWidget {
                 return Center(
                   child: Text(
                     'No templates yet',
-                    style: TextStyle(
-                      color: isDark
-                          ? AppColors.onSurfaceVariantDark
-                          : AppColors.onSurfaceVariantLight,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.onSurfaceVariant,
                     ),
                   ),
                 );
@@ -300,11 +290,11 @@ class _QuickTemplatesRow extends ConsumerWidget {
                   final item = items[index];
                   return Material(
                     color: isDark
-                        ? AppColors.surfaceVariantDark
-                        : AppColors.surfaceVariantLight,
-                    borderRadius: BorderRadius.circular(16),
+                        ? Theme.of(context).colorScheme.surfaceContainerHigh
+                        : AppColors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXl),
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusXl),
                       onTap: () {
                         context.push('/add-transaction');
                       },
@@ -321,7 +311,7 @@ class _QuickTemplatesRow extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.xs),
                             Text(
                               item.name,
-                              style: const TextStyle(fontSize: 11),
+                              style: Theme.of(context).textTheme.labelSmall,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
                             ),
@@ -357,55 +347,54 @@ class _RecentActivity extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Recent Activity',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
+        Text('Recent Activity', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: AppSpacing.sm),
         recentTx.when(
           data: (transactions) {
             if (transactions.isEmpty) {
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.receipt_long_outlined,
-                          size: 48,
-                          color: isDark
-                              ? AppColors.onSurfaceVariantDark
-                              : AppColors.onSurfaceVariantLight,
+              return Container(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Theme.of(context).colorScheme.surfaceContainerLow
+                      : AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+                ),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 48,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'No transactions yet',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.onSurfaceVariant,
                         ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          'No transactions yet',
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.onSurfaceVariantDark
-                                : AppColors.onSurfaceVariantLight,
-                          ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Tap + to add your first transaction',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.onSurfaceVariant,
                         ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          'Tap + to add your first transaction',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? AppColors.onSurfaceVariantDark
-                                : AppColors.onSurfaceVariantLight,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );
             }
-            return Card(
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Theme.of(context).colorScheme.surfaceContainerLow
+                    : AppColors.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+                boxShadow: AppShadows.card,
+              ),
               child: Column(
                 children: transactions.map((tx) {
                   return _TransactionTile(
@@ -418,17 +407,21 @@ class _RecentActivity extends ConsumerWidget {
               ),
             );
           },
-          loading: () => const Card(
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: Center(child: CircularProgressIndicator()),
+          loading: () => Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(AppTheme.radiusXl),
             ),
+            child: const Center(child: CircularProgressIndicator()),
           ),
-          error: (_, _) => const Card(
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: Text('Error loading transactions'),
+          error: (_, _) => Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(AppTheme.radiusXl),
             ),
+            child: const Text('Error loading transactions'),
           ),
         ),
       ],
@@ -465,8 +458,12 @@ class _TransactionTile extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+          color: isExpense
+              ? AppColors.errorContainer.withValues(alpha: 0.3)
+              : isTransfer
+                  ? AppColors.secondaryContainer.withValues(alpha: 0.5)
+                  : AppColors.tertiaryFixedDim.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         ),
         child: Icon(
           isExpense
@@ -480,16 +477,15 @@ class _TransactionTile extends StatelessWidget {
       ),
       title: Text(
         transaction.note ?? transaction.type.toUpperCase(),
-        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
         dateFormat.format(transaction.date),
-        style: TextStyle(
-          fontSize: 12,
-          color: isDark
-              ? AppColors.onSurfaceVariantDark
-              : AppColors.onSurfaceVariantLight,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: AppColors.onSurfaceVariant,
         ),
       ),
       trailing: Text(

@@ -27,7 +27,7 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   CircleAvatar(
                     radius: 32,
-                    backgroundColor: AppColors.primaryLight,
+                    backgroundColor: AppColors.primaryContainer,
                     child: Text(
                       (user?.email?.substring(0, 1) ?? 'U').toUpperCase(),
                       style: const TextStyle(
@@ -58,7 +58,7 @@ class ProfileScreen extends ConsumerWidget {
                             fontSize: 14,
                             color: isDark
                                 ? AppColors.onSurfaceVariantDark
-                                : AppColors.onSurfaceVariantLight,
+                                : AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -320,7 +320,7 @@ class _SectionHeader extends StatelessWidget {
           letterSpacing: 1,
           color: isDark
               ? AppColors.onSurfaceVariantDark
-              : AppColors.onSurfaceVariantLight,
+              : AppColors.onSurfaceVariant,
         ),
       ),
     );
@@ -345,7 +345,7 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: textColor ?? AppColors.primaryLight, size: 22),
+      leading: Icon(icon, color: textColor ?? AppColors.primaryContainer, size: 22),
       title: Text(
         title,
         style: TextStyle(

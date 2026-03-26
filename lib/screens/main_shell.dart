@@ -1,6 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import '../config/app_theme.dart';
 
 class MainShell extends StatelessWidget {
   final Widget child;
@@ -36,52 +37,54 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selectedIndex = _calculateSelectedIndex(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      extendBody: true, // allow content to scroll behind glass nav
       body: child,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/accounts/add-transaction'),
-        elevation: 4,
-        child: const Icon(Icons.add_rounded, size: 28),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: AppGradients.primaryCta,
+          borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+          boxShadow: AppShadows.floating,
+        ),
+        child: FloatingActionButton(
+          onPressed: () => context.push('/accounts/add-transaction'),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          child: const Icon(Icons.add_rounded, size: 28),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.grey.shade200,
-              width: 1,
-            ),
+      bottomNavigationBar: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: NavigationBar(
+            selectedIndex: selectedIndex,
+            onDestinationSelected: (index) => _onItemTapped(context, index),
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard_rounded),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.account_balance_wallet_outlined),
+                selectedIcon: Icon(Icons.account_balance_wallet_rounded),
+                label: 'Accounts',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.pie_chart_outline_rounded),
+                selectedIcon: Icon(Icons.pie_chart_rounded),
+                label: 'Reports',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline_rounded),
+                selectedIcon: Icon(Icons.person_rounded),
+                label: 'Profile',
+              ),
+            ],
           ),
-        ),
-        child: NavigationBar(
-          selectedIndex: selectedIndex,
-          onDestinationSelected: (index) => _onItemTapped(context, index),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard_rounded),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-              label: 'Accounts',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.pie_chart_outline_rounded),
-              selectedIcon: Icon(Icons.pie_chart_rounded),
-              label: 'Reports',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
-              label: 'Profile',
-            ),
-          ],
         ),
       ),
     );

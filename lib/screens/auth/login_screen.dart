@@ -81,7 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Scaffold(
       body: SafeArea(
@@ -101,22 +101,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.primaryLight,
-                            AppColors.primaryLight.withValues(alpha: 0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryLight.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
+                        gradient: AppGradients.primaryCta,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusXxl),
+                        boxShadow: AppShadows.floating,
                       ),
                       child: const Icon(
                         Icons.account_balance_wallet_rounded,
@@ -138,9 +125,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       'AI-Powered Finance Tracker',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: isDark
-                                ? AppColors.onSurfaceVariantDark
-                                : AppColors.onSurfaceVariantLight,
+                            color: AppColors.onSurfaceVariant,
                           ),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
@@ -197,7 +182,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
                           color: AppColors.error.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                         ),
                         child: Row(
                           children: [
@@ -218,21 +203,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
                     const SizedBox(height: AppSpacing.lg),
 
-                    SizedBox(
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text('Sign In'),
-                      ),
+                    GradientButton(
+                      onPressed: _isLoading ? null : _handleLogin,
+                      isLoading: _isLoading,
+                      child: const Text('Sign In'),
                     ),
                   ],
                 ),

@@ -46,8 +46,8 @@ class AccountsScreen extends ConsumerWidget {
                       Icons.account_balance_wallet_outlined,
                       size: 64,
                       color: isDark
-                          ? AppColors.onSurfaceVariantDark
-                          : AppColors.onSurfaceVariantLight,
+                           ? AppColors.onSurfaceVariantDark
+                          : AppColors.onSurfaceVariant,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
@@ -103,7 +103,7 @@ class AccountsScreen extends ConsumerWidget {
                               letterSpacing: 1,
                               color: isDark
                                   ? AppColors.onSurfaceVariantDark
-                                  : AppColors.onSurfaceVariantLight,
+                                  : AppColors.onSurfaceVariant,
                             ),
                           ),
                           Text(
@@ -113,7 +113,7 @@ class AccountsScreen extends ConsumerWidget {
                               fontWeight: FontWeight.w600,
                               color: isDark
                                   ? AppColors.onSurfaceVariantDark
-                                  : AppColors.onSurfaceVariantLight,
+                                  : AppColors.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -125,7 +125,7 @@ class AccountsScreen extends ConsumerWidget {
                           final color = account.color != null
                               ? Color(int.parse(
                                   account.color!.replaceFirst('#', '0xFF')))
-                              : AppColors.primaryLight;
+                              : AppColors.primaryContainer;
 
                           return ListTile(
                             leading: Container(
@@ -133,7 +133,7 @@ class AccountsScreen extends ConsumerWidget {
                               height: 40,
                               decoration: BoxDecoration(
                                 color: color.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                               ),
                               child: Icon(
                                 _getAccountIcon(account.type),
