@@ -11,8 +11,8 @@ class MainShell extends StatelessWidget {
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/accounts')) return 1;
-    if (location.startsWith('/reports')) return 2;
+    if (location.startsWith('/reports')) return 1;
+    if (location.startsWith('/accounts')) return 2;
     if (location.startsWith('/profile')) return 3;
     return 0;
   }
@@ -23,10 +23,10 @@ class MainShell extends StatelessWidget {
         context.go('/home');
         break;
       case 1:
-        context.go('/accounts');
+        context.go('/reports');
         break;
       case 2:
-        context.go('/reports');
+        context.go('/accounts');
         break;
       case 3:
         context.go('/profile');
@@ -39,7 +39,7 @@ class MainShell extends StatelessWidget {
     final selectedIndex = _calculateSelectedIndex(context);
 
     return Scaffold(
-      extendBody: true, // allow content to scroll behind glass nav
+      extendBody: true,
       body: child,
       floatingActionButton: Container(
         decoration: BoxDecoration(
@@ -64,24 +64,24 @@ class MainShell extends StatelessWidget {
             onDestinationSelected: (index) => _onItemTapped(context, index),
             destinations: const [
               NavigationDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard_rounded),
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home_rounded),
                 label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.receipt_long_outlined),
+                selectedIcon: Icon(Icons.receipt_long_rounded),
+                label: 'History',
               ),
               NavigationDestination(
                 icon: Icon(Icons.account_balance_wallet_outlined),
                 selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-                label: 'Accounts',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.pie_chart_outline_rounded),
-                selectedIcon: Icon(Icons.pie_chart_rounded),
-                label: 'Reports',
+                label: 'Budget',
               ),
               NavigationDestination(
                 icon: Icon(Icons.person_outline_rounded),
                 selectedIcon: Icon(Icons.person_rounded),
-                label: 'Profile',
+                label: 'More',
               ),
             ],
           ),
