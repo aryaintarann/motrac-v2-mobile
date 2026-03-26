@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../config/app_theme.dart';
 import '../../providers/providers.dart';
@@ -305,7 +306,7 @@ class _QuickTemplatesRow extends ConsumerWidget {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
                       onTap: () {
-                        // TODO: Open pre-filled transaction modal
+                        context.push('/add-transaction');
                       },
                       child: Container(
                         width: 80,
