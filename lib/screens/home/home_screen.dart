@@ -120,7 +120,7 @@ class _NetWorthCard extends ConsumerWidget {
               height: 40,
               child: CircularProgressIndicator(color: Colors.white),
             ),
-            error: (_, __) => const Text(
+            error: (_, _) => const Text(
               'Error loading',
               style: TextStyle(color: Colors.white70),
             ),
@@ -251,7 +251,7 @@ class _AiPacingWidget extends ConsumerWidget {
           child: Center(child: CircularProgressIndicator()),
         ),
       ),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
@@ -294,7 +294,7 @@ class _QuickTemplatesRow extends ConsumerWidget {
               return ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: items.length,
-                separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+                separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
                 itemBuilder: (context, index) {
                   final item = items[index];
                   return Material(
@@ -333,7 +333,7 @@ class _QuickTemplatesRow extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
         ),
       ],
@@ -423,7 +423,7 @@ class _RecentActivity extends ConsumerWidget {
               child: Center(child: CircularProgressIndicator()),
             ),
           ),
-          error: (_, __) => const Card(
+          error: (_, _) => const Card(
             child: Padding(
               padding: EdgeInsets.all(AppSpacing.lg),
               child: Text('Error loading transactions'),

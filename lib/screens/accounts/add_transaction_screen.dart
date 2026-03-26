@@ -72,9 +72,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         context.pop();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -103,11 +105,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 padding: const EdgeInsets.all(AppSpacing.xs),
                 child: Row(
                   children: [
-                    _TypeChip('expense', Icons.arrow_upward_rounded,
+                    _typeChip('expense', Icons.arrow_upward_rounded,
                         AppColors.expense, isDark),
-                    _TypeChip('income', Icons.arrow_downward_rounded,
+                    _typeChip('income', Icons.arrow_downward_rounded,
                         AppColors.income, isDark),
-                    _TypeChip('transfer', Icons.swap_horiz_rounded,
+                    _typeChip('transfer', Icons.swap_horiz_rounded,
                         AppColors.transfer, isDark),
                   ],
                 ),
@@ -138,7 +140,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             // ─── Account ──────────────────────────────────────────
             accounts.when(
               data: (accountList) => DropdownButtonFormField<String>(
-                value: _selectedAccountId,
+                initialValue: _selectedAccountId,
                 decoration: InputDecoration(
                   labelText: _type == 'transfer' ? 'From Account' : 'Account',
                   prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
@@ -149,7 +151,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 onChanged: (v) => setState(() => _selectedAccountId = v),
               ),
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text('Error loading accounts'),
+              error: (_, _) => const Text('Error loading accounts'),
             ),
             const SizedBox(height: AppSpacing.md),
 
@@ -157,7 +159,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             if (_type == 'transfer') ...[
               accounts.when(
                 data: (accountList) => DropdownButtonFormField<String>(
-                  value: _selectedToAccountId,
+                  initialValue: _selectedToAccountId,
                   decoration: const InputDecoration(
                     labelText: 'To Account',
                     prefixIcon: Icon(Icons.account_balance_outlined),
@@ -170,7 +172,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   onChanged: (v) => setState(() => _selectedToAccountId = v),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Error loading accounts'),
+                error: (_, _) => const Text('Error loading accounts'),
               ),
               const SizedBox(height: AppSpacing.md),
             ],
@@ -179,7 +181,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             if (_type != 'transfer')
               categories.when(
                 data: (catList) => DropdownButtonFormField<String>(
-                  value: _selectedCategoryId,
+                  initialValue: _selectedCategoryId,
                   decoration: const InputDecoration(
                     labelText: 'Category',
                     prefixIcon: Icon(Icons.category_outlined),
@@ -193,7 +195,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   onChanged: (v) => setState(() => _selectedCategoryId = v),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Error loading categories'),
+                error: (_, _) => const Text('Error loading categories'),
               ),
             const SizedBox(height: AppSpacing.md),
 
@@ -249,7 +251,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     );
   }
 
-  Widget _TypeChip(
+  Widget _typeChip(
       String type, IconData icon, Color color, bool isDark) {
     final isSelected = _type == type;
     return Expanded(

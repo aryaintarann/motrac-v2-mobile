@@ -110,7 +110,7 @@ class _SummaryCards extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
@@ -261,7 +261,7 @@ class _IncomeExpenseBarChart extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Center(child: Text('Error')),
+            error: (_, _) => const Center(child: Text('Error')),
           ),
         ),
       ),
@@ -338,7 +338,7 @@ class _CategoryPieChart extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Center(child: Text('Error')),
+            error: (_, _) => const Center(child: Text('Error')),
           ),
         ),
       ),

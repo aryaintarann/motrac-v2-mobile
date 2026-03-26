@@ -77,8 +77,10 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
         context.pop();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -122,7 +124,7 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
           const SizedBox(height: AppSpacing.md),
           accounts.when(
             data: (accountList) => DropdownButtonFormField<String>(
-              value: _selectedAccountId,
+              initialValue: _selectedAccountId,
               decoration: const InputDecoration(
                 labelText: 'Select Account',
                 prefixIcon: Icon(Icons.account_balance_wallet_outlined),
@@ -136,7 +138,7 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
               onChanged: (v) => setState(() => _selectedAccountId = v),
             ),
             loading: () => const LinearProgressIndicator(),
-            error: (_, __) => const Text('Error'),
+            error: (_, _) => const Text('Error'),
           ),
           const SizedBox(height: AppSpacing.md),
           TextFormField(

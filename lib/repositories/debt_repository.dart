@@ -43,6 +43,6 @@ class DebtRepository {
 
   Future<double> getTotalPaid(String debtId) async {
     final payments = await getPayments(debtId);
-    return payments.fold(0.0, (sum, p) => sum + p.amount);
+    return payments.fold<double>(0.0, (sum, p) => sum + p.amount);
   }
 }

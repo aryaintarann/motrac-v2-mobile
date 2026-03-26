@@ -41,6 +41,6 @@ class AccountRepository {
 
   Future<double> getTotalBalance() async {
     final accounts = await getAccounts();
-    return accounts.fold(0.0, (sum, account) => sum + account.balance);
+    return accounts.fold<double>(0.0, (sum, account) => sum + account.balance);
   }
 }

@@ -13,7 +13,7 @@ class CalendarScreen extends ConsumerStatefulWidget {
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   late DateTime _selectedMonth;
-  DateTime? _selectedDay;
+
 
   @override
   void initState() {
@@ -132,8 +132,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
                     return InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () => setState(() => _selectedDay =
-                          DateTime(_selectedMonth.year, _selectedMonth.month, day)),
+                      onTap: () {},
                       child: Container(
                         margin: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
@@ -174,7 +173,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const Center(child: Text('Error')),
+              error: (_, _) => const Center(child: Text('Error')),
             ),
           ),
         ],

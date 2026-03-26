@@ -58,7 +58,7 @@ final accountsProvider = FutureProvider<List<AccountModel>>((ref) async {
 
 final totalBalanceProvider = FutureProvider<double>((ref) async {
   final accounts = await ref.watch(accountsProvider.future);
-  return accounts.fold(0.0, (sum, a) => sum + a.balance);
+  return accounts.fold<double>(0.0, (sum, a) => sum + a.balance);
 });
 
 final recentTransactionsProvider = FutureProvider<List<TransactionModel>>((ref) async {
