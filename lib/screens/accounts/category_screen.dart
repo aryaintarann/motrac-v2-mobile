@@ -372,7 +372,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                     },
                     loading: () => const Center(
                         child: CircularProgressIndicator(color: Colors.white)),
-                    error: (_, __) => const Text(
+                    error: (err, stack) => const Text(
                         'Failed to load insight.',
                         style: TextStyle(color: Colors.white)),
                   );
