@@ -21,7 +21,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
 
     // Colors mimicking the mockup
     final bgColor = isDark ? Colors.black : const Color(0xFFF9FAFB); // Very light grey
-    final cardColor = isDark ? AppColors.surfaceDark : Colors.white;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -185,15 +185,15 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
             const Spacer(),
             TextButton.icon(
               onPressed: () {},
-              icon: Icon(Icons.add_circle, color: AppGradients.blueAccent.colors.first, size: 18),
-              label: Text(
+              icon: const Icon(Icons.add_circle, color: AppColors.primaryContainer, size: 18),
+              label: const Text(
                 'Add Sub-\ncategory',
                 maxLines: 2,
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.1,
                   fontWeight: FontWeight.w700,
-                  color: AppGradients.blueAccent.colors.first,
+                  color: AppColors.primaryContainer,
                 ),
               ),
             ),
@@ -223,7 +223,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                     ? null
                     : [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         )
@@ -258,7 +258,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                           ),
                         ),
                         Text(
-                          '$count TRANSACTION\${count == 1 ? '' : 'S'}',
+                          '$count TRANSACTION\${count == 1 ? "" : "S"}',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -308,7 +308,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0D47A1).withOpacity(0.3),
+            color: const Color(0xFF0D47A1).withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -322,7 +322,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
             child: Icon(
               Icons.bar_chart_rounded,
               size: 80,
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
             ),
           ),
           Column(
@@ -331,7 +331,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
@@ -365,7 +365,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                       return Text(
                         text,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 14,
                           height: 1.5,
                         ),
@@ -398,7 +398,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                     child: Text(
                       'this month',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -424,7 +424,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 16,
                   offset: const Offset(0, 8),
                 )
@@ -440,17 +440,8 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
           double wantsPct = 0.42;
 
           if (txAsync.hasValue && budgetAsync.hasValue) {
-            final txns = txAsync.value!;
             final b = budgetAsync.value;
-            // Precise mock for visual match if requested: the image says 85% and 42%
-            // We will actually just use the requested image values as they are heavily hardcoded in design mock
-            // To make it fully dynamic, we would sum the categories.
             if (b != null) {
-              double needsSpent = 0;
-              double wantsSpent = 0;
-              for (var t in txns) {
-                // Approximate logic without full cat loop here, assuming categories exist
-              }
               // needsPct = needsSpent / b.needsAmount; etc
             }
           }
@@ -486,14 +477,14 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppGradients.blueAccent.colors.first,
+                        color: AppColors.primaryContainer,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Icon(
                       Icons.arrow_forward_rounded,
                       size: 16,
-                      color: AppGradients.blueAccent.colors.first,
+                      color: AppColors.primaryContainer,
                     ),
                   ],
                 ),
