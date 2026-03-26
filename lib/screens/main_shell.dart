@@ -41,21 +41,6 @@ class MainShell extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       body: child,
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: AppGradients.primaryCta,
-          borderRadius: BorderRadius.circular(AppTheme.radiusXl),
-          boxShadow: AppShadows.floating,
-        ),
-        child: FloatingActionButton(
-          onPressed: () => context.push('/accounts/add-transaction'),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          child: const Icon(Icons.add_rounded, size: 28),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: ClipRRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
