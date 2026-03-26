@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/app_theme.dart';
 import '../../providers/providers.dart';
 import '../../models/category_model.dart';
@@ -183,7 +185,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
             ),
             const Spacer(),
             TextButton.icon(
-              onPressed: () {},
+              onPressed: () => _showCategoryDialog(defaultType: title.toLowerCase()),
               icon: const Icon(Icons.add_circle, color: AppColors.primaryContainer, size: 18),
               label: const Text(
                 'Add Sub-\ncategory',
@@ -269,14 +271,14 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () => _showCategoryDialog(category: cat),
                     icon: const Icon(Icons.edit, size: 18),
                     color: isDark ? Colors.grey[400] : Colors.grey[700],
                   ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () => _showDeleteConfirm(cat),
                     icon: const Icon(Icons.delete, size: 18),
-                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                    color: AppColors.error.withValues(alpha: 0.8),
                   ),
                 ],
               ),
@@ -462,7 +464,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
               _buildProgressBar('Wants', wantsPct, const Color(0xFF0F766E), isDark), // Teal Dark
               const SizedBox(height: AppSpacing.lg),
               TextButton(
-                onPressed: () {},
+                onPressed: () => context.go('/accounts'),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(0, 0),
@@ -529,5 +531,125 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _showCategoryDialog({CategoryModel? category, String? defaultType}) async {
+    final isEdit = category != null;
+    final nameController = TextEditingController(text: category?.name ?? '');
+    String selectedType = category?.budgetType ?? defaultType ?? 'needs';
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(isEdit ? 'Edit Category' : 'New Category'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                decoration: const InputDecoration(
+                  labelText: 'Budget Type',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'needs', child: Text('Needs (50%)')),
+                  DropdownMenuItem(value: 'wants', child: Text('Wants (30%)')),
+                  DropdownMenuItem(value: 'savings', child: Text('Savings (20%)')),
+                ],
+                onChanged: (val) {
+                  if (val != null) selectedType = val;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final name = nameController.text.trim();
+                if (name.isEmpty) return;
+                
+                final userId = Supabase.instance.client.auth.currentUser?.id;
+                if (userId == null) return;
+                
+                final repo = ref.read(categoryRepositoryProvider);
+
+                try {
+                  if (isEdit) {
+                    await repo.updateCategory(category.id, {
+                      'name': name,
+                      'budget_type': selectedType,
+                      'type': 'expense', 
+                    });
+                  } else {
+                    await repo.createCategory({
+                      'user_id': userId,
+                      'name': name,
+                      'budget_type': selectedType,
+                      'type': 'expense',
+                    });
+                  }
+                  if (mounted) Navigator.pop(context);
+                  ref.invalidate(categoriesProvider);
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryContainer,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(isEdit ? 'Save Changes' : 'Create'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showDeleteConfirm(CategoryModel category) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Category?'),
+        content: Text('Are you sure you want to delete "${category.name}"? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error, 
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      )
+    );
+
+    if (confirm == true) {
+      try {
+        await ref.read(categoryRepositoryProvider).deleteCategory(category.id);
+        ref.invalidate(categoriesProvider);
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
   }
 }
