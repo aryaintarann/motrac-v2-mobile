@@ -556,7 +556,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
-                value: selectedType,
+                initialValue: selectedType,
                 decoration: const InputDecoration(
                   labelText: 'Budget Type',
                   border: OutlineInputBorder(),
@@ -602,12 +602,12 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                       'type': 'expense',
                     });
                   }
-                  if (mounted) Navigator.pop(context);
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
                   ref.invalidate(categoriesProvider);
                 } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-                  }
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
               style: ElevatedButton.styleFrom(
