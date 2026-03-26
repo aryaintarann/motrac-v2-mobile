@@ -19,10 +19,15 @@ class AccountsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Accounts'),
         actions: [
-          TextButton.icon(
-            onPressed: () => context.push('/accounts/debts'),
-            icon: const Icon(Icons.receipt_long_outlined, size: 18),
-            label: const Text('Debts'),
+          IconButton(
+            icon: const Icon(Icons.category_outlined),
+            tooltip: 'Categories',
+            onPressed: () => context.push('/accounts/categories'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            tooltip: 'Add Account',
+            onPressed: () => context.push('/accounts/add-account'),
           ),
           IconButton(
             icon: const Icon(Icons.compare_arrows_rounded),

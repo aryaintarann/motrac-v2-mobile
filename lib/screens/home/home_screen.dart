@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/app_theme.dart';
 import '../../providers/providers.dart';
 
@@ -49,21 +50,19 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // ─── My Accounts ──────────────────────────────────────
-              _MyAccountsSection(),
-              const SizedBox(height: AppSpacing.lg),
+
 
               // ─── Monthly Budget ───────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: _BudgetSection(title: 'Monthly Budget'),
+                child: _BudgetSection(title: 'Monthly Budget', isWeekly: false),
               ),
               const SizedBox(height: AppSpacing.lg),
 
               // ─── Weekly Budget ────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: _BudgetSection(title: 'Weekly Budget'),
+                child: _BudgetSection(title: 'Weekly Budget', isWeekly: true),
               ),
               const SizedBox(height: AppSpacing.lg),
 
@@ -79,12 +78,39 @@ class HomeScreen extends ConsumerWidget {
 }
 
 // ─── Dashboard Header ────────────────────────────────────────────────────────
-class _DashboardHeader extends ConsumerWidget {
+class _DashboardHeader extends ConsumerStatefulWidget {
+  const _DashboardHeader();
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_DashboardHeader> createState() => _DashboardHeaderState();
+}
+
+class _DashboardHeaderState extends ConsumerState<_DashboardHeader> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  Widget _buildInitialsAvatar(String initials) {
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: AppColors.primaryFixed,
+      child: Text(
+        initials,
+        style: GoogleFonts.manrope(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primaryContainer,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final user = ref.watch(currentUserProvider);
-    final initials =
-        (user?.email?.substring(0, 1) ?? 'M').toUpperCase();
+    final initials = (user?.email?.substring(0, 1) ?? 'M').toUpperCase();
+    final avatarUrl = user?.userMetadata?['avatar_url'] as String?;
+    final unreadCountAsync = ref.watch(unreadNotificationsCountProvider);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -92,17 +118,22 @@ class _DashboardHeader extends ConsumerWidget {
       child: Row(
         children: [
           // Profile avatar
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: AppColors.primaryFixed,
-            child: Text(
-              initials,
-              style: GoogleFonts.manrope(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryContainer,
-              ),
-            ),
+          ClipOval(
+            child: avatarUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: avatarUrl,
+                    cacheKey: avatarUrl.split('?').first,
+                    memCacheWidth: 150, // Optimize memory decode
+                    memCacheHeight: 150,
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.cover,
+                    fadeInDuration: Duration.zero, // Disable fade-in to prevent flashing
+                    fadeOutDuration: Duration.zero,
+                    placeholder: (context, url) => _buildInitialsAvatar(initials),
+                    errorWidget: (context, url, error) => _buildInitialsAvatar(initials),
+                  )
+                : _buildInitialsAvatar(initials),
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
@@ -122,10 +153,43 @@ class _DashboardHeader extends ConsumerWidget {
               color: AppColors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(AppTheme.radiusLg),
             ),
-            child: IconButton(
-              icon: const Icon(Icons.notifications_outlined, size: 20),
-              onPressed: () {},
-              color: AppColors.onSurfaceVariant,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.notifications_outlined, size: 20),
+                  onPressed: () => context.push('/notifications'),
+                  color: AppColors.onSurfaceVariant,
+                ),
+                unreadCountAsync.when(
+                  data: (count) {
+                    if (count > 0) {
+                      return Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: AppColors.error,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            count > 9 ? '9+' : count.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, _) => const SizedBox.shrink(),
+                ),
+              ],
             ),
           ),
         ],
@@ -264,7 +328,7 @@ class _IncomeExpenseRow extends ConsumerWidget {
               const Spacer(),
               weeklyData.when(
                 data: (data) {
-                  final income = data['income'] ?? 0.0;
+                  final income = data['monthIncome'] ?? 0.0;
                   return Text(
                     formatter.format(income),
                     style: GoogleFonts.manrope(
@@ -319,7 +383,7 @@ class _IncomeExpenseRow extends ConsumerWidget {
               const Spacer(),
               weeklyData.when(
                 data: (data) {
-                  final spent = data['spent'] ?? 0.0;
+                  final spent = data['monthExpense'] ?? 0.0;
                   return Text(
                     formatter.format(spent),
                     style: GoogleFonts.manrope(
@@ -346,18 +410,30 @@ class _QuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final actions = [
-      {'icon': Icons.swap_horiz_rounded, 'label': 'Transfer'},
-      {'icon': Icons.receipt_long_outlined, 'label': 'Bill'},
-      {'icon': Icons.savings_outlined, 'label': 'Savings'},
+      {'icon': Icons.add_card_rounded, 'label': 'Transaction', 'route': '/accounts/add-transaction', 'isGo': false},
+      {'icon': Icons.category_outlined, 'label': 'Category', 'route': '/accounts/categories', 'isGo': false},
+      {'icon': Icons.money_off_rounded, 'label': 'Debt', 'route': '/accounts/debts', 'isGo': false},
+      {'icon': Icons.smart_toy_outlined, 'label': 'AI Advisor', 'route': '/reports', 'isGo': true},
+      {'icon': Icons.account_balance_rounded, 'label': 'Account', 'route': '/accounts', 'isGo': true},
     ];
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: actions.map((a) {
-        return Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.lg),
-          child: GestureDetector(
-            onTap: () => context.push('/accounts/add-transaction'),
+    return SizedBox(
+      height: 85,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        itemCount: actions.length,
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.lg),
+        itemBuilder: (context, index) {
+          final a = actions[index];
+          return GestureDetector(
+            onTap: () {
+              if (a['isGo'] == true) {
+                context.go(a['route'] as String);
+              } else {
+                context.push(a['route'] as String);
+              }
+            },
             child: Column(
               children: [
                 Container(
@@ -385,170 +461,24 @@ class _QuickActions extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        );
-      }).toList(),
+          );
+        },
+      ),
     );
   }
 }
 
-// ─── My Accounts Section ─────────────────────────────────────────────────────
-class _MyAccountsSection extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final accounts = ref.watch(accountsProvider);
-    final formatter =
-        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'My Accounts',
-                style: GoogleFonts.manrope(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
-                ),
-              ),
-              GestureDetector(
-                onTap: () => context.go('/accounts'),
-                child: Text(
-                  'View All',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.primaryContainer,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        SizedBox(
-          height: 100,
-          child: accounts.when(
-            data: (list) {
-              if (list.isEmpty) {
-                return Center(
-                  child: Text(
-                    'No accounts yet',
-                    style: GoogleFonts.inter(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 13,
-                    ),
-                  ),
-                );
-              }
-              return ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                itemCount: list.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(width: AppSpacing.sm),
-                itemBuilder: (context, index) {
-                  final account = list[index];
-                  final color = account.color != null
-                      ? Color(int.parse(
-                          account.color!.replaceFirst('#', '0xFF')))
-                      : AppColors.primaryContainer;
-
-                  return Container(
-                    width: 160,
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLowest,
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusXl),
-                      boxShadow: AppShadows.card,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(
-                                    AppTheme.radiusMd),
-                              ),
-                              child: Icon(
-                                _getIcon(account.type),
-                                size: 14,
-                                color: color,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: Text(
-                                account.name,
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          formatter.format(account.balance),
-                          style: GoogleFonts.manrope(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => const SizedBox.shrink(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  IconData _getIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'cash':
-        return Icons.payments_outlined;
-      case 'bank':
-        return Icons.account_balance_outlined;
-      case 'e-wallet':
-      case 'ewallet':
-        return Icons.phone_android_outlined;
-      case 'credit':
-        return Icons.credit_card_outlined;
-      default:
-        return Icons.account_balance_wallet_outlined;
-    }
-  }
-}
 
 // ─── Budget Section ──────────────────────────────────────────────────────────
 class _BudgetSection extends ConsumerWidget {
   final String title;
-  const _BudgetSection({required this.title});
+  final bool isWeekly;
+  const _BudgetSection({required this.title, required this.isWeekly});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final weeklyData = ref.watch(weeklySpendingProvider);
+    final budgetAsync = ref.watch(currentBudgetProvider);
+    final formatter = NumberFormat.compactCurrency(locale: 'id_ID', symbol: 'Rp');
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -568,38 +498,52 @@ class _BudgetSection extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          weeklyData.when(
-            data: (data) {
-              final percentage = (data['percentage'] ?? 0.0);
+          budgetAsync.when(
+            data: (budget) {
+              if (budget == null) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  child: Text('AI Budget pending structure.', style: TextStyle(color: Colors.grey)),
+                );
+              }
+
+              final divisor = isWeekly ? 4.0 : 1.0;
+              final needs = budget.needsAmount / divisor;
+              final wants = budget.wantsAmount / divisor;
+              final savings = budget.savingsAmount / divisor;
+              final total = needs + wants + savings;
+
+              if (total <= 0) {
+                return const Text('AI Budget is empty.', style: TextStyle(color: Colors.grey));
+              }
+
               return Column(
                 children: [
                   _BudgetBar(
-                    label: 'Needs',
-                    value: (percentage * 0.5).clamp(0.0, 1.0),
-                    percentage: '${(percentage * 50).toStringAsFixed(0)}%',
+                    label: 'Needs Priority',
+                    value: needs / total,
+                    percentage: formatter.format(needs),
                     color: AppColors.primaryContainer,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _BudgetBar(
-                    label: 'Wants',
-                    value: (percentage * 0.3).clamp(0.0, 1.0),
-                    percentage: '${(percentage * 30).toStringAsFixed(0)}%',
+                    label: 'Wants & Lifestyle',
+                    value: wants / total,
+                    percentage: formatter.format(wants),
                     color: AppColors.secondary,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _BudgetBar(
-                    label: 'Savings Progress',
-                    value: (1 - percentage).clamp(0.0, 1.0),
-                    percentage:
-                        '${((1 - percentage) * 100).toStringAsFixed(0)}%',
+                    label: 'Savings Target',
+                    value: savings / total,
+                    percentage: formatter.format(savings),
                     color: AppColors.tertiary,
                   ),
                 ],
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) =>
-                const Text('Unable to load budget data'),
+            error: (_, _) => const Text('Unable to load budget data'),
           ),
         ],
       ),

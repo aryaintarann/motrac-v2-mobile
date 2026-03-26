@@ -347,12 +347,43 @@ class _CategoryPieChart extends ConsumerWidget {
 }
 
 // ─── AI Insights Card ────────────────────────────────────────────────────────
-class _AiInsightsCard extends ConsumerWidget {
+class _AiInsightsCard extends ConsumerStatefulWidget {
   final bool isDark;
   const _AiInsightsCard({required this.isDark});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AiInsightsCard> createState() => _AiInsightsCardState();
+}
+
+class _AiInsightsCardState extends ConsumerState<_AiInsightsCard> {
+  bool _isLoading = false;
+
+  Future<void> _generateInsight() async {
+    setState(() => _isLoading = true);
+    try {
+      final aiService = ref.read(aiServiceProvider);
+      await aiService.generateInsights();
+      ref.invalidate(latestInsightProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Insight generated & synced with Web!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: \$e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final insightAsync = ref.watch(latestInsightProvider);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -360,38 +391,89 @@ class _AiInsightsCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primaryLight,
-                        const Color(0xFF8B5CF6),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.auto_awesome_rounded,
-                      color: Colors.white, size: 16),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  'AI Insights',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primaryLight,
+                            const Color(0xFF8B5CF6),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
                       ),
+                      child: const Icon(Icons.auto_awesome_rounded,
+                          color: Colors.white, size: 16),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'AI Financial Advisor',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+                TextButton.icon(
+                  onPressed: _isLoading ? null : _generateInsight,
+                  icon: _isLoading
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.refresh, size: 16),
+                  label: const Text('Ask AI'),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              'Insights are generated based on your spending patterns. Keep tracking to unlock personalized recommendations!',
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark
-                    ? AppColors.onSurfaceVariantDark
-                    : AppColors.onSurfaceVariantLight,
+            insightAsync.when(
+              data: (insight) {
+                if (insight == null) {
+                  return Text(
+                    'No insights generated yet. Tap "Ask AI" to analyze your current month\'s spending pacing using Gemini 2.5 Flash!',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: widget.isDark
+                          ? AppColors.onSurfaceVariantDark
+                          : AppColors.onSurfaceVariantLight,
+                    ),
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      insight.content,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: widget.isDark
+                            ? AppColors.onSurfaceDark
+                            : AppColors.onSurfaceLight,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      "Generated on \${DateFormat('MMM dd, hh:mm a').format(insight.generatedAt.toLocal())}",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: widget.isDark
+                            ? AppColors.onSurfaceVariantDark
+                            : AppColors.onSurfaceVariantLight,
+                      ),
+                    ),
+                  ],
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, _) => Text(
+                'Could not load insights: \$err',
+                style: const TextStyle(color: Colors.red),
               ),
             ),
           ],

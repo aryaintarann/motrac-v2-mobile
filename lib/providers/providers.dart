@@ -6,11 +6,25 @@ import '../repositories/transaction_repository.dart';
 import '../repositories/category_repository.dart';
 import '../repositories/debt_repository.dart';
 import '../repositories/template_repository.dart';
+import '../repositories/budget_repository.dart';
+import '../repositories/ai_insight_repository.dart';
+import '../repositories/reconciliation_repository.dart';
+import '../repositories/notification_repository.dart';
 import '../models/account_model.dart';
 import '../models/transaction_model.dart';
 import '../models/category_model.dart';
 import '../models/debt_model.dart';
 import '../models/template_model.dart';
+import '../models/budget_model.dart';
+import '../models/ai_insight_model.dart';
+import '../models/reconciliation_model.dart';
+import '../models/notification_model.dart';
+import '../services/ai_service.dart';
+
+// ─── Services ─────────────────────────────────────────────────────────────────
+final aiServiceProvider = Provider<AiService>((ref) {
+  return AiService(ref.watch(supabaseClientProvider));
+});
 
 // ─── Supabase Client ──────────────────────────────────────────────────────────
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
@@ -40,6 +54,22 @@ final debtRepositoryProvider = Provider<DebtRepository>((ref) {
 
 final templateRepositoryProvider = Provider<TemplateRepository>((ref) {
   return TemplateRepository(ref.watch(supabaseClientProvider));
+});
+
+final budgetRepositoryProvider = Provider<BudgetRepository>((ref) {
+  return BudgetRepository(ref.watch(supabaseClientProvider));
+});
+
+final aiInsightRepositoryProvider = Provider<AiInsightRepository>((ref) {
+  return AiInsightRepository(ref.watch(supabaseClientProvider));
+});
+
+final reconciliationRepositoryProvider = Provider<ReconciliationRepository>((ref) {
+  return ReconciliationRepository(ref.watch(supabaseClientProvider));
+});
+
+final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
+  return NotificationRepository(ref.watch(supabaseClientProvider));
 });
 
 // ─── Auth State ────────────────────────────────────────────────────────────────
@@ -96,6 +126,31 @@ final templatesProvider = FutureProvider<List<TemplateModel>>((ref) async {
   return ref.watch(templateRepositoryProvider).getTemplates();
 });
 
+final currentBudgetProvider = FutureProvider<BudgetModel?>((ref) async {
+  final now = DateTime.now();
+  final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+  return ref.watch(budgetRepositoryProvider).getBudgetByMonth(month);
+});
+
+final latestInsightProvider = FutureProvider<AiInsightModel?>((ref) async {
+  return ref.watch(aiInsightRepositoryProvider).getLatestInsight();
+});
+
+final reconciliationsProvider = FutureProvider.family<List<ReconciliationModel>, String?>(
+  (ref, accountId) async {
+    return ref.watch(reconciliationRepositoryProvider).getReconciliations(accountId: accountId);
+  },
+);
+
+final notificationsProvider = FutureProvider<List<NotificationModel>>((ref) async {
+  return ref.watch(notificationRepositoryProvider).getNotifications();
+});
+
+final unreadNotificationsCountProvider = FutureProvider<int>((ref) async {
+  final notes = await ref.watch(notificationsProvider.future);
+  return notes.where((n) => !n.isRead).length;
+});
+
 // ─── Weekly Spending for AI Pacing ─────────────────────────────────────────────
 final weeklySpendingProvider = FutureProvider<Map<String, double>>((ref) async {
   final repo = ref.watch(transactionRepositoryProvider);
@@ -120,6 +175,6 @@ final weeklySpendingProvider = FutureProvider<Map<String, double>>((ref) async {
     'monthExpense': monthExpense,
     'monthIncome': income,
     'remaining': remaining,
-    'percentage': weeklyBudget > 0 ? (weekExpense / weeklyBudget) : 0,
+    'percentage': weeklyBudget > 0 ? (weekExpense / weeklyBudget) : 0.0,
   };
 });

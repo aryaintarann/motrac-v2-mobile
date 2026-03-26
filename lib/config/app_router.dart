@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/main_shell.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/home/notifications_screen.dart';
 import '../screens/accounts/accounts_screen.dart';
 import '../screens/accounts/add_transaction_screen.dart';
 import '../screens/accounts/reconciliation_screen.dart';
@@ -12,6 +13,8 @@ import '../screens/accounts/debt_manager_screen.dart';
 import '../screens/reports/reports_screen.dart';
 import '../screens/reports/calendar_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/accounts/add_account_screen.dart';
+import '../screens/accounts/category_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -37,6 +40,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
@@ -68,6 +75,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: 'debts',
                 parentNavigatorKey: _rootNavigatorKey,
                 builder: (context, state) => const DebtManagerScreen(),
+              ),
+              GoRoute(
+                path: 'add-account',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const AddAccountScreen(),
+              ),
+              GoRoute(
+                path: 'categories',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const CategoryScreen(),
               ),
             ],
           ),
