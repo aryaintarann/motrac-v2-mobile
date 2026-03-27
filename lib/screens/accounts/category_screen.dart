@@ -64,52 +64,83 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
               data: (cats) {
                 return transactionsAsync.when(
                   data: (txns) {
-                    final needs = cats.where((c) => c.budgetType == 'needs').toList();
-                    final wants = cats.where((c) => c.budgetType == 'wants').toList();
-                    final savings = cats.where((c) => c.budgetType == 'savings').toList();
+                    // Main categories: have no parent (top-level roots)
+                    final mainNeeds   = cats.where((c) => c.parentId == null && c.budgetType == 'needs').toList();
+                    final mainWants   = cats.where((c) => c.parentId == null && c.budgetType == 'wants').toList();
+                    final mainSavings = cats.where((c) => c.parentId == null && c.budgetType == 'savings').toList();
+                    final mainIncome  = cats.where((c) => c.parentId == null && c.budgetType == 'income').toList();
 
-                    return Column(
-                      children: [
-                        _buildBucketGroup(
-                          context: context,
-                          title: 'Needs',
-                          percentage: '(50%)',
-                          icon: Icons.check_circle_rounded,
-                          iconColor: const Color(0xFF3B82F6),
-                          iconBgColor: const Color(0xFFEFF6FF),
-                          items: needs,
-                          txns: txns,
-                          isDark: isDark,
-                          cardColor: cardColor,
-                        ),
-                        const SizedBox(height: AppSpacing.xl),
-                        _buildBucketGroup(
-                          context: context,
-                          title: 'Wants',
-                          percentage: '(30%)',
-                          icon: Icons.favorite_rounded,
-                          iconColor: const Color(0xFF14B8A6),
-                          iconBgColor: const Color(0xFFF0FDFA),
-                          items: wants,
-                          txns: txns,
-                          isDark: isDark,
-                          cardColor: cardColor,
-                        ),
-                        const SizedBox(height: AppSpacing.xl),
-                        _buildBucketGroup(
-                          context: context,
-                          title: 'Savings',
-                          percentage: '(20%)',
-                          icon: Icons.savings_rounded,
-                          iconColor: const Color(0xFF6366F1),
-                          iconBgColor: const Color(0xFFEEF2FF),
-                          items: savings,
-                          txns: txns,
-                          isDark: isDark,
-                          cardColor: cardColor,
-                        ),
-                      ],
-                    );
+                    // Sub-categories: have a parent_id pointing to a main category
+                    final allSubs = cats.where((c) => c.parentId != null).toList();
+
+                    // Build bucket for each main category, showing its specific sub-categories
+                    List<Widget> buckets = [];
+                    for (final main in mainNeeds) {
+                      buckets.add(_buildBucketGroup(
+                        context: context,
+                        title: main.name,
+                        percentage: '(50%)',
+                        icon: Icons.check_circle_rounded,
+                        iconColor: const Color(0xFF3B82F6),
+                        iconBgColor: const Color(0xFFEFF6FF),
+                        parentCategory: main,
+                        subItems: allSubs.where((s) => s.parentId == main.id).toList(),
+                        txns: txns,
+                        isDark: isDark,
+                        cardColor: cardColor,
+                      ));
+                      buckets.add(const SizedBox(height: AppSpacing.xl));
+                    }
+                    for (final main in mainWants) {
+                      buckets.add(_buildBucketGroup(
+                        context: context,
+                        title: main.name,
+                        percentage: '(30%)',
+                        icon: Icons.favorite_rounded,
+                        iconColor: const Color(0xFF14B8A6),
+                        iconBgColor: const Color(0xFFF0FDFA),
+                        parentCategory: main,
+                        subItems: allSubs.where((s) => s.parentId == main.id).toList(),
+                        txns: txns,
+                        isDark: isDark,
+                        cardColor: cardColor,
+                      ));
+                      buckets.add(const SizedBox(height: AppSpacing.xl));
+                    }
+                    for (final main in mainSavings) {
+                      buckets.add(_buildBucketGroup(
+                        context: context,
+                        title: main.name,
+                        percentage: '(20%)',
+                        icon: Icons.savings_rounded,
+                        iconColor: const Color(0xFF6366F1),
+                        iconBgColor: const Color(0xFFEEF2FF),
+                        parentCategory: main,
+                        subItems: allSubs.where((s) => s.parentId == main.id).toList(),
+                        txns: txns,
+                        isDark: isDark,
+                        cardColor: cardColor,
+                      ));
+                      buckets.add(const SizedBox(height: AppSpacing.xl));
+                    }
+                    for (final main in mainIncome) {
+                      buckets.add(_buildBucketGroup(
+                        context: context,
+                        title: main.name,
+                        percentage: '(Income)',
+                        icon: Icons.trending_up_rounded,
+                        iconColor: const Color(0xFF22C55E),
+                        iconBgColor: const Color(0xFFF0FDF4),
+                        parentCategory: main,
+                        subItems: allSubs.where((s) => s.parentId == main.id).toList(),
+                        txns: txns,
+                        isDark: isDark,
+                        cardColor: cardColor,
+                      ));
+                      buckets.add(const SizedBox(height: AppSpacing.xl));
+                    }
+
+                    return Column(children: buckets);
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (e, _) => Center(child: Text('Error: $e')),
@@ -140,15 +171,16 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
     required IconData icon,
     required Color iconColor,
     required Color iconBgColor,
-    required List<CategoryModel> items,
-    required List<dynamic> txns, // List<TransactionModel>
+    required CategoryModel parentCategory,  // The main (protected) root category
+    required List<CategoryModel> subItems,  // Only sub-categories under this parent
+    required List<dynamic> txns,
     required bool isDark,
     required Color cardColor,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Group Header
+        // ── Group Header (Main Category — read-only, no edit/delete) ──────────
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -184,8 +216,9 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
               ],
             ),
             const Spacer(),
+            // Add Sub-category passes the parentCategory.id as parent_id
             TextButton.icon(
-              onPressed: () => _showCategoryDialog(defaultType: title.toLowerCase()),
+              onPressed: () => _showAddSubcategoryDialog(parentCategory),
               icon: const Icon(Icons.add_circle, color: AppColors.primaryContainer, size: 18),
               label: const Text(
                 'Add Sub-\ncategory',
@@ -202,17 +235,17 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
         ),
         const SizedBox(height: AppSpacing.md),
 
-        // Group Items
-        if (items.isEmpty)
+        // ── Sub-Category Items (editable & deletable) ─────────────────────────
+        if (subItems.isEmpty)
           Padding(
-            padding: const EdgeInsets.only(left: 60),
+            padding: const EdgeInsets.only(left: 60, bottom: AppSpacing.sm),
             child: Text(
-              'No items.',
+              'No sub-categories yet. Tap + to add one.',
               style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[400]),
             ),
           )
         else
-          ...items.map((cat) {
+          ...subItems.map((cat) {
             final count = txns.where((t) => t.categoryId == cat.id).length;
             return Container(
               margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -270,8 +303,9 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                       ],
                     ),
                   ),
+                  // Sub-categories CAN be edited and deleted
                   IconButton(
-                    onPressed: () => _showCategoryDialog(category: cat),
+                    onPressed: () => _showEditSubcategoryDialog(cat),
                     icon: const Icon(Icons.edit, size: 18),
                     color: isDark ? Colors.grey[400] : Colors.grey[700],
                   ),
@@ -533,88 +567,117 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
     );
   }
 
-  Future<void> _showCategoryDialog({CategoryModel? category, String? defaultType}) async {
-    final isEdit = category != null;
-    final nameController = TextEditingController(text: category?.name ?? '');
-    String selectedType = category?.budgetType ?? defaultType ?? 'needs';
+  // ── Add Sub-category (stores parent_id of the main category) ──────────────────
+  Future<void> _showAddSubcategoryDialog(CategoryModel parentCategory) async {
+    final nameController = TextEditingController();
 
     await showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogCtx) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(isEdit ? 'Edit Category' : 'New Category'),
+          title: const Text('New Category'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
-                ),
+              Text(
+                'Parent: ${parentCategory.name}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<String>(
-                initialValue: selectedType,
+              TextField(
+                controller: nameController,
+                autofocus: true,
                 decoration: const InputDecoration(
-                  labelText: 'Budget Type',
+                  labelText: 'Category Name',
+                  hintText: 'e.g. Groceries, Netflix, Gas',
                   border: OutlineInputBorder(),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'needs', child: Text('Needs (50%)')),
-                  DropdownMenuItem(value: 'wants', child: Text('Wants (30%)')),
-                  DropdownMenuItem(value: 'savings', child: Text('Savings (20%)')),
-                ],
-                onChanged: (val) {
-                  if (val != null) selectedType = val;
-                },
               ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogCtx),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
                 final name = nameController.text.trim();
                 if (name.isEmpty) return;
-                
                 final userId = Supabase.instance.client.auth.currentUser?.id;
                 if (userId == null) return;
-                
-                final repo = ref.read(categoryRepositoryProvider);
-
                 try {
-                  if (isEdit) {
-                    await repo.updateCategory(category.id, {
-                      'name': name,
-                      'budget_type': selectedType,
-                      'type': 'expense', 
-                    });
-                  } else {
-                    await repo.createCategory({
-                      'user_id': userId,
-                      'name': name,
-                      'budget_type': selectedType,
-                      'type': 'expense',
-                    });
-                  }
-                  if (!context.mounted) return;
-                  Navigator.pop(context);
+                  await ref.read(categoryRepositoryProvider).createCategory({
+                    'user_id': userId,
+                    'name': name,
+                    'parent_id': parentCategory.id,         // ← key: link to parent
+                    'budget_type': parentCategory.budgetType, // inherit from parent
+                    'type': parentCategory.type,
+                  });
+                  if (!dialogCtx.mounted) return;
+                  Navigator.pop(dialogCtx);
                   ref.invalidate(categoriesProvider);
                 } catch (e) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  if (!dialogCtx.mounted) return;
+                  ScaffoldMessenger.of(dialogCtx).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryContainer,
                 foregroundColor: Colors.white,
               ),
-              child: Text(isEdit ? 'Save Changes' : 'Create'),
+              child: const Text('Save Category'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ── Edit Sub-category (rename only, preserves parent_id) ──────────────────────
+  Future<void> _showEditSubcategoryDialog(CategoryModel category) async {
+    final nameController = TextEditingController(text: category.name);
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Edit Category'),
+          content: TextField(
+            controller: nameController,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Name',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final name = nameController.text.trim();
+                if (name.isEmpty) return;
+                try {
+                  await ref.read(categoryRepositoryProvider).updateCategory(category.id, {'name': name});
+                  if (!dialogCtx.mounted) return;
+                  Navigator.pop(dialogCtx);
+                  ref.invalidate(categoriesProvider);
+                } catch (e) {
+                  if (!dialogCtx.mounted) return;
+                  ScaffoldMessenger.of(dialogCtx).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryContainer,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Save Changes'),
             ),
           ],
         );
