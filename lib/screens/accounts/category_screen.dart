@@ -335,116 +335,177 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
   }
 
   Widget _buildAiInsightCard(bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D47A1), // Deep blue
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0D47A1).withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+    return Consumer(
+      builder: (context, ref, _) {
+        final categoriesAsync = ref.watch(categoriesProvider);
+        final transactionsAsync = ref.watch(allTransactionsProvider(null));
+        final insightAsync = ref.watch(latestInsightProvider);
+
+        // ── Compute real monthly spending ────────────────────────────────
+        String topCategoryName = 'Pengeluaran';
+        double topCategoryAmount = 0;
+        double totalThisMonth = 0;
+
+        final now = DateTime.now();
+        final startOfMonth = DateTime(now.year, now.month, 1);
+
+        if (transactionsAsync.hasValue && categoriesAsync.hasValue) {
+          final txns = transactionsAsync.value!;
+          final cats = categoriesAsync.value!;
+
+          // Filter only expense transactions in this month
+          final monthlyExpenses = txns.where((t) =>
+              t.type == 'expense' &&
+              t.date.isAfter(startOfMonth.subtract(const Duration(seconds: 1)))).toList();
+
+          // Sum total spending this month
+          totalThisMonth = monthlyExpenses.fold(0.0, (sum, t) => sum + t.amount);
+
+          // Group by category to find top spender
+          final Map<String, double> catTotals = {};
+          for (final t in monthlyExpenses) {
+            if (t.categoryId != null) {
+              catTotals[t.categoryId!] = (catTotals[t.categoryId!] ?? 0) + t.amount;
+            }
+          }
+
+          if (catTotals.isNotEmpty) {
+            final topId = catTotals.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+            topCategoryAmount = catTotals[topId] ?? 0;
+            final topCat = cats.where((c) => c.id == topId).firstOrNull;
+            if (topCat != null) topCategoryName = topCat.name;
+          }
+        }
+
+        // Format as Indonesian Rupiah
+        String formatRupiah(double val) {
+          if (val >= 1000000) return 'Rp ${(val / 1000000).toStringAsFixed(1)}Jt';
+          if (val >= 1000) return 'Rp ${(val / 1000).toStringAsFixed(0)}Rb';
+          return 'Rp ${val.toStringAsFixed(0)}';
+        }
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0D47A1),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0D47A1).withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 0,
-            top: 0,
-            child: Icon(
-              Icons.bar_chart_rounded,
-              size: 80,
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Icon(
+                  Icons.bar_chart_rounded,
+                  size: 80,
+                  color: Colors.white.withValues(alpha: 0.1),
                 ),
-                child: const Text(
-                  'MONTHLY INSIGHT',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Badge ────────────────────────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'MONTHLY INSIGHT',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              const Text(
-                'Top Spending Category',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              // Watch latestInsightProvider
-              Consumer(
-                builder: (context, ref, _) {
-                  final insightAsync = ref.watch(latestInsightProvider);
-                  return insightAsync.when(
+                  const SizedBox(height: AppSpacing.md),
+
+                  // ── Title: Top Spending Category name ────────────────────
+                  Text(
+                    'Top: $topCategoryName',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  // ── AI Insight Text ──────────────────────────────────────
+                  insightAsync.when(
                     data: (insight) {
                       final text = insight?.content ??
-                          'Food and Dining accounts for 32% of your monthly expenses. Consider setting a budget alert.';
+                          'Belum ada insight bulan ini. Tekan refresh untuk menganalisis pengeluaran Anda! 🧠';
                       return Text(
                         text,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 14,
+                          fontSize: 13,
                           height: 1.5,
                         ),
                       );
                     },
-                    loading: () => const Center(
-                        child: CircularProgressIndicator(color: Colors.white)),
+                    loading: () => const SizedBox(
+                      height: 40,
+                      child: Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                    ),
                     error: (err, stack) => const Text(
-                        'Failed to load insight.',
-                        style: TextStyle(color: Colors.white)),
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    '\$1,240', // Mock value replicating exact image
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      height: 1.0,
+                      'Gagal memuat insight.',
+                      style: TextStyle(color: Colors.white70),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      'this month',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // ── Top category spend + total + refresh button ──────────
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            formatRupiah(topCategoryAmount),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              height: 1.0,
+                            ),
+                          ),
+                          Text(
+                            'dari ${formatRupiah(totalThisMonth)} total bulan ini',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const Spacer(),
+                      // ── AI Refresh button ────────────────────────────────
+                      _AiRefreshButton(),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -714,5 +775,61 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
+  }
+}
+
+// ─── AI Refresh Button ─────────────────────────────────────────────────────────
+class _AiRefreshButton extends ConsumerStatefulWidget {
+  const _AiRefreshButton();
+
+  @override
+  ConsumerState<_AiRefreshButton> createState() => _AiRefreshButtonState();
+}
+
+class _AiRefreshButtonState extends ConsumerState<_AiRefreshButton> {
+  bool _loading = false;
+
+  Future<void> _refresh() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    try {
+      await ref.read(aiServiceProvider).generateInsights();
+      ref.invalidate(latestInsightProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ AI Insight berhasil diperbarui!'),
+            backgroundColor: Color(0xFF22C55E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+    if (mounted) setState(() => _loading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _refresh,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: _loading
+            ? const SizedBox(
+                width: 20, height: 20,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              )
+            : const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
+      ),
+    );
   }
 }
