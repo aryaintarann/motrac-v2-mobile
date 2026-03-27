@@ -342,7 +342,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
         final insightAsync = ref.watch(latestInsightProvider);
 
         // ── Compute real monthly spending ────────────────────────────────
-        String topCategoryName = 'Pengeluaran';
+        String topCategoryName = 'Spending';
         double topCategoryAmount = 0;
         double totalThisMonth = 0;
 
@@ -379,8 +379,8 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
 
         // Format as Indonesian Rupiah
         String formatRupiah(double val) {
-          if (val >= 1000000) return 'Rp ${(val / 1000000).toStringAsFixed(1)}Jt';
-          if (val >= 1000) return 'Rp ${(val / 1000).toStringAsFixed(0)}Rb';
+          if (val >= 1000000) return 'Rp ${(val / 1000000).toStringAsFixed(1)}M';
+          if (val >= 1000) return 'Rp ${(val / 1000).toStringAsFixed(0)}K';
           return 'Rp ${val.toStringAsFixed(0)}';
         }
 
@@ -463,7 +463,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                       child: Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
                     ),
                     error: (err, stack) => const Text(
-                      'Gagal memuat insight.',
+                      'Failed to load insight.',
                       style: TextStyle(color: Colors.white70),
                     ),
                   ),
@@ -486,7 +486,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                             ),
                           ),
                           Text(
-                            'dari ${formatRupiah(totalThisMonth)} total bulan ini',
+                            'of ${formatRupiah(totalThisMonth)} total this month',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.7),
                               fontSize: 12,
@@ -798,7 +798,7 @@ class _AiRefreshButtonState extends ConsumerState<_AiRefreshButton> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ AI Insight berhasil diperbarui!'),
+            content: Text('✅ AI Insight updated successfully!'),
             backgroundColor: Color(0xFF22C55E),
           ),
         );
