@@ -180,6 +180,7 @@ Analyze their pacing. Warn immediately if they are overspending in Needs or Want
 Provide a concise, highly actionable 2 to 3 sentence insight. 
 Tone: Friendly, professional, encouraging. 
 Format: Raw text (you can use 1 or 2 relevant emojis, avoid heavy markdown headers).
+IMPORTANT: Always respond in English, regardless of any locale or language settings.
 ''';
 
     final model = GenerativeModel(
