@@ -153,10 +153,6 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
 
             // ─── AI Monthly Insight Card ────────────────────────
             _buildAiInsightCard(isDark),
-            const SizedBox(height: AppSpacing.lg),
-
-            // ─── Quick Budget Check Card ────────────────────────
-            _buildQuickBudgetCheckCard(isDark, cardColor),
             const SizedBox(height: AppSpacing.xxl * 2),
           ],
         ),
