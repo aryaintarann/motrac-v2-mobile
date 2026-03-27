@@ -259,7 +259,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                           ),
                         ),
                         Text(
-                          '$count TRANSACTION\${count == 1 ? "" : "S"}',
+                          '$count TRANSACTION${count == 1 ? '' : 'S'}',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -512,7 +512,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
               ),
             ),
             Text(
-              '\${(percentage * 100).toInt()}%',
+              '${(percentage * 100).toInt()}%',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
