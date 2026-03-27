@@ -504,143 +504,283 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
     );
   }
 
-  // ── Add Sub-category (stores parent_id of the main category) ──────────────────
+  // ── Add Sub-category (Modal Bottom Sheet) ─────────────────────────────────────
   Future<void> _showAddSubcategoryDialog(CategoryModel parentCategory) async {
     final nameController = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    await showDialog(
+    await showModalBottomSheet(
       context: context,
-      builder: (dialogCtx) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('New Category'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Parent: ${parentCategory.name}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: nameController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Category Name',
-                  hintText: 'e.g. Groceries, Netflix, Gas',
-                  border: OutlineInputBorder(),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[700] : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 20),
+                Text(
+                  'New Sub-Category',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Under: ${parentCategory.name}',
+                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Category Name',
+                    hintText: 'e.g. Groceries, Netflix, Gas',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[50],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final name = nameController.text.trim();
+                      if (name.isEmpty) return;
+                      final userId = Supabase.instance.client.auth.currentUser?.id;
+                      if (userId == null) return;
+                      try {
+                        await ref.read(categoryRepositoryProvider).createCategory({
+                          'user_id': userId,
+                          'name': name,
+                          'parent_id': parentCategory.id,
+                          'budget_type': parentCategory.budgetType,
+                          'type': parentCategory.type,
+                        });
+                        if (!sheetCtx.mounted) return;
+                        Navigator.pop(sheetCtx);
+                        ref.invalidate(categoriesProvider);
+                      } catch (e) {
+                        if (!sheetCtx.mounted) return;
+                        ScaffoldMessenger.of(sheetCtx).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryContainer,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Save Category', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Edit Sub-category (Modal Bottom Sheet) ─────────────────────────────────────
+  Future<void> _showEditSubcategoryDialog(CategoryModel category) async {
+    final nameController = TextEditingController(text: category.name);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[700] : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Edit Category',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Name',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[50],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final name = nameController.text.trim();
+                      if (name.isEmpty) return;
+                      try {
+                        await ref.read(categoryRepositoryProvider).updateCategory(category.id, {'name': name});
+                        if (!sheetCtx.mounted) return;
+                        Navigator.pop(sheetCtx);
+                        ref.invalidate(categoriesProvider);
+                      } catch (e) {
+                        if (!sheetCtx.mounted) return;
+                        ScaffoldMessenger.of(sheetCtx).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryContainer,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Delete Sub-category (Modal Bottom Sheet) ───────────────────────────────────
+  Future<void> _showDeleteConfirm(CategoryModel category) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final confirm = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[700] : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Warning icon
+              Container(
+                width: 56, height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.delete_forever_rounded, color: AppColors.error, size: 28),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Delete Category?',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Are you sure you want to delete "${category.name}"?\nThis cannot be undone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(sheetCtx, false),
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(sheetCtx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final name = nameController.text.trim();
-                if (name.isEmpty) return;
-                final userId = Supabase.instance.client.auth.currentUser?.id;
-                if (userId == null) return;
-                try {
-                  await ref.read(categoryRepositoryProvider).createCategory({
-                    'user_id': userId,
-                    'name': name,
-                    'parent_id': parentCategory.id,         // ← key: link to parent
-                    'budget_type': parentCategory.budgetType, // inherit from parent
-                    'type': parentCategory.type,
-                  });
-                  if (!dialogCtx.mounted) return;
-                  Navigator.pop(dialogCtx);
-                  ref.invalidate(categoriesProvider);
-                } catch (e) {
-                  if (!dialogCtx.mounted) return;
-                  ScaffoldMessenger.of(dialogCtx).showSnackBar(SnackBar(content: Text('Error: $e')));
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryContainer,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Save Category'),
-            ),
-          ],
         );
       },
-    );
-  }
-
-  // ── Edit Sub-category (rename only, preserves parent_id) ──────────────────────
-  Future<void> _showEditSubcategoryDialog(CategoryModel category) async {
-    final nameController = TextEditingController(text: category.name);
-
-    await showDialog(
-      context: context,
-      builder: (dialogCtx) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Edit Category'),
-          content: TextField(
-            controller: nameController,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Name',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final name = nameController.text.trim();
-                if (name.isEmpty) return;
-                try {
-                  await ref.read(categoryRepositoryProvider).updateCategory(category.id, {'name': name});
-                  if (!dialogCtx.mounted) return;
-                  Navigator.pop(dialogCtx);
-                  ref.invalidate(categoriesProvider);
-                } catch (e) {
-                  if (!dialogCtx.mounted) return;
-                  ScaffoldMessenger.of(dialogCtx).showSnackBar(SnackBar(content: Text('Error: $e')));
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryContainer,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Save Changes'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _showDeleteConfirm(CategoryModel category) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Category?'),
-        content: Text('Are you sure you want to delete "${category.name}"? This cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error, 
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      )
     );
 
     if (confirm == true) {
